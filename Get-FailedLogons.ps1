@@ -1,29 +1,16 @@
 <#
-.SYNOPSIS
-    Summarize Windows Security event 4625 (failed logon).
+Get-FailedLogons.ps1
+Sums up Windows Security event 4625 (failed logons).
 
-.DESCRIPTION
-    Day 2 of my learning log. Windows writes event 4625 every time a logon
-    fails. One or two is usually a typo. A burst from one address is someone
-    guessing passwords.
+  -Sample   reads the made-up csv next to this script, works on any machine
+  default   reads the real Security log, needs Windows and admin rights
 
-    Two modes:
+Prints failures per user, per source IP and per reason, then flags anything
+with -Threshold or more failures as worth a closer look.
 
-      -Sample   reads the made-up CSV next to this script. Works on any
-                machine, no Windows event log and no admin rights needed.
-
-      (default) reads the real Security log on a Windows machine. Reading
-                the Security log needs administrator rights.
-
-    Both modes print the same summary: failures per user, per source IP and
-    per failure reason, then a short list of anything with -Threshold or
-    more failures that is worth a closer look.
-
-.EXAMPLE
-    .\Get-FailedLogons.ps1 -Sample
-
-.EXAMPLE
-    .\Get-FailedLogons.ps1 -Hours 24 -Threshold 10
+Examples:
+  .\Get-FailedLogons.ps1 -Sample
+  .\Get-FailedLogons.ps1 -Hours 24 -Threshold 10
 #>
 
 [CmdletBinding()]
@@ -34,7 +21,7 @@ param(
     [int]$Threshold = 5
 )
 
-# LogonType says HOW the logon was attempted.
+# how the logon was attempted
 $LogonTypeName = @{
     2  = 'Interactive (keyboard, or runas)'
     3  = 'Network (file share, SMB)'
@@ -47,7 +34,7 @@ $LogonTypeName = @{
     11 = 'CachedInteractive (no domain controller reachable)'
 }
 
-# SubStatus says WHY it failed.
+# why it failed
 $StatusMeaning = @{
     '0xC0000064' = 'user name does not exist'
     '0xC000006A' = 'correct user, wrong password'
@@ -75,8 +62,7 @@ function Get-RealFailedLogons {
     $start = (Get-Date).AddHours(-$Hours)
     $events = Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4625; StartTime = $start } -ErrorAction Stop
     foreach ($e in $events) {
-        # The useful fields live in the event XML. Pulling them by name is
-        # clearer (and safer) than guessing array positions.
+        # the fields live in the event xml, grab them by name
         $xml = [xml]$e.ToXml()
         $data = @{}
         foreach ($node in $xml.Event.EventData.Data) {
@@ -101,7 +87,7 @@ if ($Sample) {
         $rows = @(Get-RealFailedLogons -Hours $Hours)
     } catch {
         Write-Host "Could not read the Security log: $($_.Exception.Message)"
-        Write-Host 'Try running PowerShell as administrator, or use -Sample.'
+        Write-Host 'Run powershell as administrator, or use -Sample.'
         exit 1
     }
 }
