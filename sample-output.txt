@@ -1,0 +1,38 @@
+Parsing sample data from ...\sample-4625-events.csv
+17 failed logons (event 4625)
+
+Failures by user:
+
+Name          Count
+----          -----
+administrator     8
+admin             3
+jsmith            2
+backup            1
+mali              1
+sqlservice        1
+test              1
+
+Failures by source IP:
+
+Name           Count
+----           -----
+185.220.101.4     11
+10.0.0.31          2
+10.0.0.8           2
+10.0.0.24          1
+192.168.1.105      1
+
+Failures by reason:
+
+SubStatus   Meaning                       Count
+---------   -------                       -----
+0xC000006A  correct user, wrong password     10
+0xC0000064  user name does not exist          4
+0xC0000071  password expired                  1
+0xC0000234  account locked out                1
+0xC0000072  account disabled                  1
+
+Worth a closer look (5+ failures):
+- user 'administrator': 8 failures, last from 185.220.101.4
+- source 185.220.101.4: 11 failures against 2 user name(s)
